@@ -6,11 +6,8 @@ from tkinter import *
 
 
 class App:
-    def __init__(self, parent, val, val2, val3, val4, val5, val6, val7, val8):
+    def __init__(self, parent, val, val2, val3, val4, val5, val6, val7, val8, gg, lenX, lenY, X, Y, T):
         self.parent = parent
-
-        self.label = Label(text=f'Delta value:')
-        self.label.pack()
 
         self.val = val
         self.val2 = val2
@@ -20,6 +17,15 @@ class App:
         self.val6 = val6
         self.val7 = val7
         self.val8 = val8
+        self.gg = gg
+        self.lenX = lenX
+        self.lenY = lenY
+        self.X = X
+        self.Y = Y
+        self.T = T
+
+        self.label = Label(text=f'Delta value: (default = 1)')
+        self.label.pack()
 
         self.entry = Entry(self.parent)
         self.entry.pack()
@@ -37,7 +43,7 @@ class App:
         self.entry3.pack()
 
         self.BClabel = Label(text="BOUNDARY CONDITIONS")
-        self.BClabel.pack(fill='x')
+        self.BClabel.pack(fill='x', pady=20)
 
         self.TopBC = Label(text="Top boundary condition:")
         self.TopBC.pack()
@@ -71,15 +77,19 @@ class App:
 
         self.next_func = self.use_entry
 
-        self.button = Button(parent, text='OK', command=self.use_entry)
-        self.button.pack(side=BOTTOM)
+        self.ggbutton = Button(text="Compute", command=self.use_entry)
+        self.ggbutton.pack()
 
     def use_entry(self):
         contents = self.entry.get()
-        self.val = contents
+        if contents != '':
+            self.val = contents
+        else:
+            self.val = 1
 
         length = self.entry2.get()
         self.val2 = length
+        self.lenX = self.lenY = length
 
         initial_guess = self.entry3.get()
         self.val3 = initial_guess
@@ -98,78 +108,54 @@ class App:
 
         iterations = self.entry8.get()
         self.val8 = iterations
+        self.iterlabel = Label(self.parent, text=f"Computing for {self.val8} iterations...", bg="#ffffff")
+        self.iterlabel.pack()
+        self.guess_gridd()
+
+    def guess_gridd(self):
+        guess_grid = np.empty((int(self.val2), int(self.val2)))
+        guess_grid.fill(self.val3)
+        self.gg = guess_grid
+        guess_grid[(int(self.lenY) - 1):, :] = self.val4
+        guess_grid[:1, :] = self.val5
+        guess_grid[:, (int(self.lenX) - 1):] = self.val6
+        guess_grid[:, :1] = self.val7
+        self.grid_creator()
+
+    def grid_creator(self):
+        X, Y = np.meshgrid(np.arange(0, int(self.val2)), np.arange(0, int(self.val2)))
+        self.X, self.Y = X, Y
+        self.finite_diff_method()
+
+    def finite_diff_method(self):
+        T = self.gg
+        for iter in range(0, int(self.val8)):  # how many times you want to iterate, the bigger the better but slower.
+            for i in range(1, int(self.lenX) - 1, int(self.val)):
+                for j in range(1, int(self.lenY) - 1, int(self.val)):
+                    T[i, j] = 0.25 * (T[i + 1][j] + T[i - 1][j] + T[i][j + 1] + T[i][j - 1])
+                    #  This is the actual finite difference approximation formila
+        self.T = T
+        self.plotter()
+
+    def plotter(self):
+        color_interpolation = 50
+        colour_map = plt.cm.jet
+        plt.title("Potential plot for coaxial cylinders")
+        plt.contourf(self.X, self.Y, self.T, color_interpolation, cmap=colour_map)
+        plt.colorbar()
+        plt.show()
+        self.iterlabel.pack_forget()
 
 
-def guess_gridd(length, initial_guess):
-    guess_grid = np.empty((length, length))
-    guess_grid.fill(initial_guess)
-    return guess_grid
-
-
-def grid_creator(length):
-    X, Y = np.meshgrid(np.arange(0, length), np.arange(0, length))
-    return X, Y
-
-
-def finite_diff_method(lenX, lenY, guess_grid, delta, iterations):
-    T = guess_grid
-    for iter in range(0, iterations):  # how many times you want to iterate, the bigger the better but slower.
-        for i in range(1, lenX - 1, delta):
-            for j in range(1, lenY - 1, delta):
-                T[i, j] = 0.25 * (T[i + 1][j] + T[i - 1][j] + T[i][j + 1] + T[i][j - 1])
-                #  This is the actual finite difference approximation formila
-    print(f"Computing for {iterations} iterations, wait a moment...")
-    return T
-
-
-def plotter(X, Y, T):
-    color_interpolation = 50
-    colour_map = plt.cm.jet
-    plt.title("Potential plot for coaxial cylinders")
-    plt.contourf(X, Y, T, color_interpolation, cmap=colour_map)
-    plt.colorbar()
-    plt.show()
-
-
-async def main():
+def main():
     root = Tk()
     root.title("Laplace Numerical Solver")
-    root.geometry('800x400')
+    root.geometry('800x450')
     root['bg'] = '#ffffff'
-    app = App(root, 0, 0, 0, 0, 0, 0, 0, 0)
+    App(root, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     root.mainloop()
-    #  Setting constants and Boundary Conditions
-    delta = int(app.val)
-    print(f"Delta: {delta}")
-    length = int(app.val2)
-    print(f"Length: {length}")
-    initial_guess = int(app.val3)
-    print(f"Initial Guess: {initial_guess}")
-    TopBC = int(app.val4)
-    print(f"TopBC: {TopBC}")
-    BottomBC = int(app.val5)
-    print(f"BottomBC: {BottomBC}")
-    RightBC = int(app.val6)
-    print(f"RightBC: {RightBC}")
-    LeftBC = int(app.val7)
-    print(f"LeftBC: {LeftBC}")
-    iterations = int(app.val8)
-
-    lenX = lenY = length
-
-    guess_grid = guess_gridd(length, initial_guess)
-
-
-
-    guess_grid[(lenY - 1):, :] = TopBC
-    guess_grid[:1, :] = BottomBC
-    guess_grid[:, (lenX - 1):] = RightBC
-    guess_grid[:, :1] = LeftBC
-    mesh_grid = grid_creator(length)
-    potential = finite_diff_method(lenX, lenY, guess_grid, delta, iterations)
-    plotter(mesh_grid[0], mesh_grid[1], potential)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
 
