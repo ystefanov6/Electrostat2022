@@ -25,13 +25,13 @@ class App:
         self.T = T
 
         self.label = Label(text=f'Delta value:')
-        self.label.pack(side = LEFT, expand = True, fill = 'x')
+        self.label.pack()
 
         self.entry = Entry(self.parent)
-        self.entry.pack(side = LEFT, expand = True, fill = 'x')
+        self.entry.pack()
 
         self.label2 = Label(text="Length:")
-        self.label2.pack(side = LEFT, expand = True, fill = 'x')
+        self.label2.pack()
 
         self.entry2 = Entry(self.parent)
         self.entry2.pack()
@@ -43,7 +43,7 @@ class App:
         self.entry3.pack()
 
         self.BClabel = Label(text="BOUNDARY CONDITIONS")
-        self.BClabel.pack(fill='x')
+        self.BClabel.pack(fill='x', pady=20)
 
         self.TopBC = Label(text="Top boundary condition:")
         self.TopBC.pack()
@@ -77,10 +77,7 @@ class App:
 
         self.next_func = self.use_entry
 
-        self.button = Button(parent, text='OK', command=self.use_entry)
-        self.button.pack()
-
-        self.ggbutton = Button(text="Compute", command=self.guess_gridd)
+        self.ggbutton = Button(text="Compute", command=self.use_entry)
         self.ggbutton.pack(side=BOTTOM)
 
     def use_entry(self):
@@ -108,6 +105,7 @@ class App:
 
         iterations = self.entry8.get()
         self.val8 = iterations
+        self.guess_gridd()
 
     def guess_gridd(self):
         guess_grid = np.empty((int(self.val2), int(self.val2)))
