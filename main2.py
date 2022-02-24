@@ -3,6 +3,7 @@ import asyncio
 import matplotlib.pyplot as plt
 import numpy as np
 from tkinter import *
+import math
 
 
 class App:
@@ -140,33 +141,23 @@ async def main():
     root.mainloop()
     #  Setting constants and Boundary Conditions
     delta = int(app.val)
-    print(f"Delta: {delta}")
     length = int(app.val2)
-    print(f"Length: {length}")
-    initial_guess = int(app.val3)
-    print(f"Initial Guess: {initial_guess}")
-    TopBC = int(app.val4)
-    print(f"TopBC: {TopBC}")
-    BottomBC = int(app.val5)
-    print(f"BottomBC: {BottomBC}")
-    RightBC = int(app.val6)
-    print(f"RightBC: {RightBC}")
-    LeftBC = int(app.val7)
-    print(f"LeftBC: {LeftBC}")
-    iterations = int(app.val8)
-
     lenX = lenY = length
 
-    guess_grid = guess_gridd(length, initial_guess)
+    length = 21
+    r = 10
+    a = b = length / 2
+    guess_grid = guess_gridd(length, 0)
+    # draw the circle
+    for angle in range(0, 360, 5):
+        x = r * math.sin(math.radians(angle)) + a
+        y = r * math.cos(math.radians(angle)) + b
+        guess_grid[int(x), int(y)] = 1
 
-
-
-    guess_grid[(lenY - 1):, :] = TopBC
-    guess_grid[:1, :] = BottomBC
-    guess_grid[:, (lenX - 1):] = RightBC
-    guess_grid[:, :1] = LeftBC
+    print(guess_grid)
+    print(guess_grid)
     mesh_grid = grid_creator(length)
-    potential = finite_diff_method(lenX, lenY, guess_grid, delta, iterations)
+    potential = finite_diff_method(lenX, lenY, guess_grid, delta, 300)
     plotter(mesh_grid[0], mesh_grid[1], potential)
 
 

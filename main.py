@@ -3,23 +3,23 @@ import asyncio
 import matplotlib.pyplot as plt
 import numpy as np
 from tkinter import *
-
+import math
 
 class App:
-    def __init__(self, parent, val, val2, val3, val4, val5, val6, val7, val8, gg, lenX, lenY, X, Y, T):
+    def __init__(self, parent, val, val2, val3, val4, rad2, circle1, circle2, gg, val8, empty, length, X, Y, T):
         self.parent = parent
 
         self.val = val
         self.val2 = val2
         self.val3 = val3
         self.val4 = val4
-        self.val5 = val5
-        self.val6 = val6
-        self.val7 = val7
         self.val8 = val8
+        self.empty = empty
+        self.length = length
+        self.circle1 = circle1
+        self.circle2 = circle2
+        self.rad2 = rad2
         self.gg = gg
-        self.lenX = lenX
-        self.lenY = lenY
         self.X = X
         self.Y = Y
         self.T = T
@@ -45,29 +45,17 @@ class App:
         self.BClabel = Label(text="BOUNDARY CONDITIONS")
         self.BClabel.pack(fill='x', pady=20)
 
-        self.TopBC = Label(text="Top boundary condition:")
+        self.TopBC = Label(text="Input Radius")
         self.TopBC.pack()
 
         self.entry4 = Entry(self.parent)
         self.entry4.pack()
 
-        self.BotBC = Label(text="Bottom boundary condition:")
-        self.BotBC.pack()
+        self.radius2 = Label(text="Input Radius 2")
+        self.radius2.pack()
 
-        self.entry5 = Entry(self.parent)
-        self.entry5.pack()
-
-        self.RightBC = Label(text="Right boundary condition:")
-        self.RightBC.pack()
-
-        self.entry6 = Entry(self.parent)
-        self.entry6.pack()
-
-        self.LeftBC = Label(text="Left boundary condition:")
-        self.LeftBC.pack()
-
-        self.entry7 = Entry(self.parent)
-        self.entry7.pack()
+        self.rad2 = Entry(self.parent)
+        self.rad2.pack()
 
         self.iter = Label(text="Number of iterations:")
         self.iter.pack()
@@ -89,51 +77,91 @@ class App:
 
         length = self.entry2.get()
         self.val2 = length
-        self.lenX = self.lenY = length
 
         initial_guess = self.entry3.get()
         self.val3 = initial_guess
 
-        top_boundary = self.entry4.get()
-        self.val4 = top_boundary
-
-        bottom_boundary = self.entry5.get()
-        self.val5 = bottom_boundary
-
-        right_boundary = self.entry6.get()
-        self.val6 = right_boundary
-
-        left_boundary = self.entry7.get()
-        self.val7 = left_boundary
+        radius = self.entry4.get()
+        self.val4 = radius
 
         iterations = self.entry8.get()
         self.val8 = iterations
         self.iterlabel = Label(self.parent, text=f"Computing for {self.val8} iterations...", bg="#ffffff")
         self.iterlabel.pack()
-        self.guess_gridd()
+        self.create_empty()
 
-    def guess_gridd(self):
-        guess_grid = np.empty((int(self.val2), int(self.val2)))
-        guess_grid.fill(self.val3)
-        self.gg = guess_grid
-        guess_grid[(int(self.lenY) - 1):, :] = self.val4
-        guess_grid[:1, :] = self.val5
-        guess_grid[:, (int(self.lenX) - 1):] = self.val6
-        guess_grid[:, :1] = self.val7
+    def create_empty(self):
+        length = int(self.val2) + 1
+        self.length = length
+        empty = np.zeros((length, length))
+        self.empty = empty
+        #print(self.empty)
+
+        self.create_circle()
+
+    def create_circle(self):
+        """r = int(self.val4)
+        a = b = (self.length - 1) / 2
+        # draw the circle
+        for angle in range(0, 360, 1):
+            x = r * math.sin(math.radians(angle)) + a
+            y = r * math.cos(math.radians(angle)) + b
+            self.empty[int(x), int(y)] = int(self.val3)
+
+        self.circle1 = self.empty"""
+        rad = int(self.val4)
+        xx, yy = np.mgrid[:int(self.length), :int(self.length)]
+        circle = (xx - rad) ** 2 + (yy - rad) ** 2
+        donut = (circle < rad**2 + rad+50) &\
+                (circle > rad**2 - rad-50)
+        self.circle1 = donut
+        self.create_circle2()
+
+    def create_circle2(self):
+        """r = int(self.rad2.get())
+        a = b = (self.length - 1) / 2
+        # draw the circle
+        for angle in range(0, 360, 1):
+            x = r * math.sin(math.radians(angle)) + a
+            y = r * math.cos(math.radians(angle)) + b
+            self.empty[int(x), int(y)] = 1
+
+        self.circle2 = self.empty"""
+        rad = int(self.rad2.get())
+        xx, yy = np.mgrid[:int(self.length), :int(self.length)]
+        circle = (xx - rad-self.length/4) ** 2 + (yy - rad-self.length/4) ** 2
+        donut = (circle < (rad**2) + rad+50) &\
+                (circle > (rad**2) - rad-50)
+        self.circle2 = donut
+
+        self.boundary_compiler()
+
+    def boundary_compiler(self):
+        self.gg = np.add(self.circle1, self.circle2)
+
         self.grid_creator()
 
     def grid_creator(self):
-        X, Y = np.meshgrid(np.arange(0, int(self.val2)), np.arange(0, int(self.val2)))
+        X, Y = np.meshgrid(np.arange(0, int(self.length)), np.arange(0, int(self.length)))
         self.X, self.Y = X, Y
         self.finite_diff_method()
 
     def finite_diff_method(self):
         T = self.gg
         for iter in range(0, int(self.val8)):  # how many times you want to iterate, the bigger the better but slower.
-            for i in range(1, int(self.lenX) - 1, int(self.val)):
-                for j in range(1, int(self.lenY) - 1, int(self.val)):
-                    T[i, j] = 0.25 * (T[i + 1][j] + T[i - 1][j] + T[i][j + 1] + T[i][j - 1])
-                    #  This is the actual finite difference approximation formila
+            for i in range(1, int(self.length) - 1, int(self.length)):
+                if i is False:
+                    i = 0
+                    for j in range(1, int(self.length) - 1, int(self.val)):
+                        if j is False:
+                            j = 0
+                            T[i, j] = 0.25 * (T[i + 1][j] + T[i - 1][j] + T[i][j + 1] + T[i][j - 1])
+                            #  This is the actual finite difference approximation formula
+                    else:
+                        continue
+                else:
+                    continue
+
         self.T = T
         self.plotter()
 
