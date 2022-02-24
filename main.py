@@ -150,17 +150,13 @@ class App:
         T = self.gg
         for iter in range(0, int(self.val8)):  # how many times you want to iterate, the bigger the better but slower.
             for i in range(1, int(self.length) - 1, int(self.length)):
-                if i is False:
-                    i = 0
+                if i is True:
+                    pass
                     for j in range(1, int(self.length) - 1, int(self.val)):
-                        if j is False:
-                            j = 0
+                        if j is True:
+                            pass
                             T[i, j] = 0.25 * (T[i + 1][j] + T[i - 1][j] + T[i][j + 1] + T[i][j - 1])
                             #  This is the actual finite difference approximation formula
-                    else:
-                        continue
-                else:
-                    continue
 
         self.T = T
         self.plotter()
