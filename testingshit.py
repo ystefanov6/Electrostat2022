@@ -24,12 +24,16 @@ def main():
         guess_grid[int(x), int(y)] = 1
 
     print(guess_grid)"""
-    xx, yy = np.mgrid[:20, :20]
-    circle = (xx - 50) ** 2 + (yy - 50) ** 2
-    donut = (circle < (2500+50)) & (circle > (2500-50))
+    rad = 100
+    length = 600
+    c = 150
+    x, y = np.mgrid[:length, :length]
+    circle = (x-rad*(length/2/rad))**2 + (y-rad*(length/2/rad))**2
+    donut = (circle < (rad**2+length/4)) & (circle > (rad**2-length/4))
     print(donut)
     plt.imshow(donut)
     plt.show()
+
 
 if __name__ == '__main__':
     main()

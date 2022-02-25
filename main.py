@@ -1,27 +1,22 @@
-import asyncio
-
 import matplotlib.pyplot as plt
 import numpy as np
 from tkinter import *
-import math
+
 
 class App:
-    def __init__(self, parent, val, val2, val3, val4, rad2, circle1, circle2, gg, val8, empty, length, X, Y, T):
+    def __init__(self, parent, delta, length, init_guess, rad1, rad2, iterations, circle1, circle2, gg, valgrid, T):
         self.parent = parent
 
-        self.val = val
-        self.val2 = val2
-        self.val3 = val3
-        self.val4 = val4
-        self.val8 = val8
-        self.empty = empty
+        self.delta = delta
         self.length = length
+        self.init_guess = init_guess
+        self.rad1 = rad1
+        self.rad2 = rad2
+        self.iterations = iterations
         self.circle1 = circle1
         self.circle2 = circle2
-        self.rad2 = rad2
         self.gg = gg
-        self.X = X
-        self.Y = Y
+        self.valgrid = valgrid
         self.T = T
 
         self.label = Label(text=f'Delta value: (default = 1)')
@@ -54,8 +49,8 @@ class App:
         self.radius2 = Label(text="Input Radius 2")
         self.radius2.pack()
 
-        self.rad2 = Entry(self.parent)
-        self.rad2.pack()
+        self.entry5 = Entry(self.parent)
+        self.entry5.pack()
 
         self.iter = Label(text="Number of iterations:")
         self.iter.pack()
@@ -71,102 +66,85 @@ class App:
     def use_entry(self):
         contents = self.entry.get()
         if contents != '':
-            self.val = contents
+            self.delta = contents
         else:
-            self.val = 1
+            self.delta = 1
 
         length = self.entry2.get()
-        self.val2 = length
+        self.length = int(length) + 1
 
         initial_guess = self.entry3.get()
-        self.val3 = initial_guess
+        self.init_guess = initial_guess
 
         radius = self.entry4.get()
-        self.val4 = radius
+        self.rad1 = radius
+
+        radius2 = self.entry5.get()
+        self.rad2 = radius2
 
         iterations = self.entry8.get()
-        self.val8 = iterations
-        self.iterlabel = Label(self.parent, text=f"Computing for {self.val8} iterations...", bg="#ffffff")
+        self.iterations = iterations
+        self.iterlabel = Label(self.parent, text=f"Computing for {self.iterations} iterations...", bg="#ffffff")
         self.iterlabel.pack()
-        self.create_empty()
+        self.create_circle_boundary()
 
-    def create_empty(self):
-        length = int(self.val2) + 1
-        self.length = length
-        empty = np.zeros((length, length))
-        self.empty = empty
-        #print(self.empty)
-
-        self.create_circle()
-
-    def create_circle(self):
-        """r = int(self.val4)
-        a = b = (self.length - 1) / 2
-        # draw the circle
-        for angle in range(0, 360, 1):
-            x = r * math.sin(math.radians(angle)) + a
-            y = r * math.cos(math.radians(angle)) + b
-            self.empty[int(x), int(y)] = int(self.val3)
-
-        self.circle1 = self.empty"""
-        rad = int(self.val4)
-        xx, yy = np.mgrid[:int(self.length), :int(self.length)]
-        circle = (xx - rad) ** 2 + (yy - rad) ** 2
-        donut = (circle < rad**2 + rad+50) &\
-                (circle > rad**2 - rad-50)
+    def create_circle_boundary(self):
+        rad = int(self.rad1)
+        x, y = np.mgrid[:self.length, :self.length]
+        circle = (x-rad*(self.length/2/rad))**2 + (y-rad*(self.length/2/rad))**2
+        donut = (circle < rad**2 + rad+self.length/4) &\
+                (circle > rad**2 - rad-self.length/4)
         self.circle1 = donut
-        self.create_circle2()
+        self.create_circle2_boundary()
 
-    def create_circle2(self):
-        """r = int(self.rad2.get())
-        a = b = (self.length - 1) / 2
-        # draw the circle
-        for angle in range(0, 360, 1):
-            x = r * math.sin(math.radians(angle)) + a
-            y = r * math.cos(math.radians(angle)) + b
-            self.empty[int(x), int(y)] = 1
-
-        self.circle2 = self.empty"""
-        rad = int(self.rad2.get())
-        xx, yy = np.mgrid[:int(self.length), :int(self.length)]
-        circle = (xx - rad-self.length/4) ** 2 + (yy - rad-self.length/4) ** 2
-        donut = (circle < (rad**2) + rad+50) &\
-                (circle > (rad**2) - rad-50)
+    def create_circle2_boundary(self):
+        rad = int(self.rad2)
+        x, y = np.mgrid[:self.length, :self.length]
+        circle = (x-rad*(self.length/2/rad))**2 + (y-rad*(self.length/2/rad))**2
+        donut = (circle < (rad**2) + rad+self.length/4) &\
+                (circle > (rad**2) - rad-self.length/4)
         self.circle2 = donut
+        self.create_value_grid()
 
+    def create_value_grid(self):
+        circle1_vals = self.circle1
+        circle2_vals = self.circle2
+        temp_grid = np.zeros((self.length, self.length))
+        temp_grid2 = np.zeros((self.length, self.length))
+        for i in range(0, self.length):
+            for j in range(0, self.length):
+                if circle1_vals[i][j]:
+                    temp_grid[i][j] = int(self.init_guess)
+
+        for i in range(0, self.length):
+            for j in range(0, self.length):
+                if circle2_vals[i][j]:
+                    temp_grid2[i][j] = 1
+
+        self.valgrid = np.add(temp_grid, temp_grid2)
         self.boundary_compiler()
 
     def boundary_compiler(self):
         self.gg = np.add(self.circle1, self.circle2)
-
-        self.grid_creator()
-
-    def grid_creator(self):
-        X, Y = np.meshgrid(np.arange(0, int(self.length)), np.arange(0, int(self.length)))
-        self.X, self.Y = X, Y
         self.finite_diff_method()
 
     def finite_diff_method(self):
         T = self.gg
-        for iter in range(0, int(self.val8)):  # how many times you want to iterate, the bigger the better but slower.
-            for i in range(1, int(self.length) - 1, int(self.length)):
-                if i is True:
-                    pass
-                    for j in range(1, int(self.length) - 1, int(self.val)):
-                        if j is True:
-                            pass
-                            T[i, j] = 0.25 * (T[i + 1][j] + T[i - 1][j] + T[i][j + 1] + T[i][j - 1])
-                            #  This is the actual finite difference approximation formula
+        T2 = self.valgrid
+        for iter in range(0, int(self.iterations)):
+            for i in range(1, self.length - 1, int(self.delta)):
+                for j in range(1, self.length - 1, int(self.delta)):
+                    if not T[i, j]:
+                        T2[i, j] = 0.25 * (T2[i + 1][j] + T2[i - 1][j] + T2[i][j + 1] + T2[i][j - 1])
+                    else:
+                        pass
 
-        self.T = T
+        self.T = T2
         self.plotter()
 
     def plotter(self):
-        color_interpolation = 50
-        colour_map = plt.cm.jet
         plt.title("Potential plot for coaxial cylinders")
-        plt.contourf(self.X, self.Y, self.T, color_interpolation, cmap=colour_map)
-        plt.colorbar()
+        plt.imshow(self.T)
         plt.show()
         self.iterlabel.pack_forget()
 
@@ -176,7 +154,7 @@ def main():
     root.title("Laplace Numerical Solver")
     root.geometry('800x450')
     root['bg'] = '#ffffff'
-    App(root, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    App(root, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     root.mainloop()
 
 
