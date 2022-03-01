@@ -3,65 +3,65 @@ import numpy as np
 from tkinter import *
 
 
+class Rect:
+    def __init__(self, x, y, length):
+        self.length = length
+        grid = np.mgrid[:self.length, :self.length]
+        grid[(length - 1):, :] = x
+        grid[:1, :] = x
+        grid[:, (length - 1):] = y
+        grid[:, :1] = y
+
+        self.rect = grid
+
+
+class Circle:
+    def __init__(self, length, rad):
+        self.rad = rad
+        self.length = length
+        x, y = np.mgrid[:self.length, :self.length]
+        circle = (x - self.rad * (self.length / 2 / self.rad)) ** 2 + \
+                 (y - self.rad * (self.length / 2 / self.rad)) ** 2
+        self.donut = (circle < self.rad ** 2 + self.rad + self.length / 4) & \
+                     (circle > self.rad ** 2 - self.rad - self.length / 4)
+
+
 class App:
-    def __init__(self, parent, delta, length, init_guess, rad1, rad2, iterations, circle1, circle2, gg, valgrid, T):
+    def __init__(self, parent):
         self.parent = parent
 
-        self.delta = delta
-        self.length = length
-        self.init_guess = init_guess
-        self.rad1 = rad1
-        self.rad2 = rad2
-        self.iterations = iterations
-        self.circle1 = circle1
-        self.circle2 = circle2
-        self.gg = gg
-        self.valgrid = valgrid
-        self.T = T
+        self.delta = None
+        self.length = None
+        self.init_guess = None
+        self.rad1 = None
+        self.rad2 = None
+        self.iterations = None
+        self.circle1 = None
+        self.circle2 = None
+        self.gg = None
+        self.valgrid = None
+        self.T = None
+        self.rect1 = None
+        self.rect2 = None
+        self.rect3 = None
+        self.rect4 = None
 
-        self.label = Label(text=f'Delta value: (default = 1)')
-        self.label.pack()
+        Label(text=f'Delta value: (default = 1)').pack()
+        self.entry = Entry(self.parent).pack()
 
-        self.entry = Entry(self.parent)
-        self.entry.pack()
+        Label(text="Length:").pack()
+        self.entry2 = Entry(self.parent).pack()
 
-        self.label2 = Label(text="Length:")
-        self.label2.pack()
+        Label(text="Initial guess:").pack()
+        self.entry3 = Entry(self.parent).pack()
 
-        self.entry2 = Entry(self.parent)
-        self.entry2.pack()
+        Label(text="BOUNDARY CONDITIONS").pack(fill='x', pady=20)
+        Button(text="Create circle", command=self.open_popup).pack()
 
-        self.label3 = Label(text="Initial guess:")
-        self.label3.pack()
+        Button(text="Compute", command=self.use_entry).pack()
 
-        self.entry3 = Entry(self.parent)
-        self.entry3.pack()
-
-        self.BClabel = Label(text="BOUNDARY CONDITIONS")
-        self.BClabel.pack(fill='x', pady=20)
-
-        self.TopBC = Label(text="Input Radius")
-        self.TopBC.pack()
-
-        self.entry4 = Entry(self.parent)
-        self.entry4.pack()
-
-        self.radius2 = Label(text="Input Radius 2")
-        self.radius2.pack()
-
-        self.entry5 = Entry(self.parent)
-        self.entry5.pack()
-
-        self.iter = Label(text="Number of iterations:")
-        self.iter.pack()
-
-        self.entry8 = Entry(self.parent)
-        self.entry8.pack()
-
-        self.next_func = self.use_entry
-
-        self.ggbutton = Button(text="Compute", command=self.use_entry)
-        self.ggbutton.pack()
+        Label(text="Number of iterations:").pack()
+        self.entry8 = Entry(self.parent).pack()
 
     def use_entry(self):
         contents = self.entry.get()
@@ -70,41 +70,26 @@ class App:
         else:
             self.delta = 1
 
-        length = self.entry2.get()
-        self.length = int(length) + 1
+        self.length = int(self.entry2.get()) + 1
 
-        initial_guess = self.entry3.get()
-        self.init_guess = initial_guess
+        self.init_guess = int(self.entry3.get())
 
-        radius = self.entry4.get()
-        self.rad1 = radius
+        self.rad1 = int(self.entry4.get())
 
-        radius2 = self.entry5.get()
-        self.rad2 = radius2
+        self.rad2 = int(self.entry5.get())
 
-        iterations = self.entry8.get()
-        self.iterations = iterations
-        self.iterlabel = Label(self.parent, text=f"Computing for {self.iterations} iterations...", bg="#ffffff")
-        self.iterlabel.pack()
+        self.iterations = int(self.entry8.get())
+
+        self.iterlabel = Label(self.parent, text=f"Computing for {self.iterations} iterations...", bg="#ffffff").pack()
+
         self.create_circle_boundary()
 
     def create_circle_boundary(self):
-        rad = int(self.rad1)
-        x, y = np.mgrid[:self.length, :self.length]
-        circle = (x-rad*(self.length/2/rad))**2 + (y-rad*(self.length/2/rad))**2
-        donut = (circle < rad**2 + rad+self.length/4) &\
-                (circle > rad**2 - rad-self.length/4)
-        self.circle1 = donut
-        self.create_circle2_boundary()
-
-    def create_circle2_boundary(self):
-        rad = int(self.rad2)
-        x, y = np.mgrid[:self.length, :self.length]
-        circle = (x-rad*(self.length/2/rad))**2 + (y-rad*(self.length/2/rad))**2
-        donut = (circle < (rad**2) + rad+self.length/4) &\
-                (circle > (rad**2) - rad-self.length/4)
-        self.circle2 = donut
+        Circle(self.length, self.rad1)
         self.create_value_grid()
+
+    def create_rect_boundary(self):
+        Rect(self.width, self.height, self.length)
 
     def create_value_grid(self):
         circle1_vals = self.circle1
@@ -148,16 +133,25 @@ class App:
         plt.show()
         self.iterlabel.pack_forget()
 
+    def open_popup(self):
+        top = Toplevel(self.parent)
+        top.geometry("400x400")
+        top.title("Input Data")
+        Label(top, text="Input Radius").pack()
+        Entry(top).pack()
+        Button(text="Confirm", command=)
+
+    def get(self):
+        return
 
 def main():
     root = Tk()
     root.title("Laplace Numerical Solver")
     root.geometry('800x450')
     root['bg'] = '#ffffff'
-    App(root, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    App(root)
     root.mainloop()
 
 
 if __name__ == '__main__':
     main()
-

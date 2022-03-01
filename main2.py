@@ -4,20 +4,20 @@ from tkinter import *
 
 
 class App:
-    def __init__(self, parent, delta, length, init_guess, rad1, rad2, iterations, circle1, circle2, gg, valgrid, T):
+    def __init__(self, parent, temp):
         self.parent = parent
 
-        self.delta = delta
-        self.length = length
-        self.init_guess = init_guess
-        self.rad1 = rad1
-        self.rad2 = rad2
-        self.iterations = iterations
-        self.circle1 = circle1
-        self.circle2 = circle2
-        self.gg = gg
-        self.valgrid = valgrid
-        self.T = T
+        self.delta = temp
+        self.length = temp
+        self.init_guess = temp
+        self.rad1 = temp
+        self.rad2 = temp
+        self.iterations = temp
+        self.circle1 = temp
+        self.circle2 = temp
+        self.gg = temp
+        self.valgrid = temp
+        self.T = temp
 
         self.label = Label(text=f'Delta value: (default = 1)')
         self.label.pack()
@@ -39,6 +39,7 @@ class App:
 
         self.BClabel = Label(text="BOUNDARY CONDITIONS")
         self.BClabel.pack(fill='x', pady=20)
+
 
         self.TopBC = Label(text="Input Radius")
         self.TopBC.pack()
@@ -154,7 +155,7 @@ def main():
     root.title("Laplace Numerical Solver")
     root.geometry('800x450')
     root['bg'] = '#ffffff'
-    App(root, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    App(root, 0)
     root.mainloop()
 
 
