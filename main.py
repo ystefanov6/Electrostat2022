@@ -305,7 +305,9 @@ class App:
     def plotter(self):
         self.fig2 = Figure(figsize=(5, 5), dpi=100)
 
-        self.fig2.add_subplot(111).imshow(self.T)
+        heatmap = self.fig2.add_subplot(111).imshow(self.T)
+        self.fig2.colorbar(heatmap)
+
 
         try:
             self.canvas2.destroy()

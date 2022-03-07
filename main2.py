@@ -146,6 +146,7 @@ class App:
     def plotter(self):
         plt.title("Potential plot for coaxial cylinders")
         plt.imshow(self.T)
+        plt.colorbar()
         plt.show()
         self.iterlabel.pack_forget()
 

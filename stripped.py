@@ -2,9 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def create_rectangle(length, x, y, x_off, y_off):
+    grid = np.zeros((length, length), dtype=bool)
+    # grid[x_off:x+x_off, y_off:y+y_off] = True
+    grid[y_off:y + y_off, x_off:x + x_off] = True
+
+    return grid
+
 def create_circle_boundary(rad, length):
     x, y = np.mgrid[:length, :length]
-    circle = (x - rad * (length / 2 / rad)) ** 2 + (y - rad * (length / 2 / rad)) ** 2
+    circle = (x - rad * (length / 2 / rad)) ** 2 +\
+             (y - rad * (length / 2 / rad)) ** 2
     donut = (circle < rad ** 2 + rad + length / 4) & \
             (circle > rad ** 2 - rad - length / 4)
 
@@ -28,8 +36,8 @@ def boundary_comp(circle1, circle2):
 
 def create_value_grid(circle1, circle2, length, init_guess):
 
-    temp_grid = np.zeros((length, length))
     temp_grid2 = np.zeros((length, length))
+    temp_grid = np.zeros((length, length))
     for i in range(0, length):
         for j in range(0, length):
             if circle1[i][j]:
@@ -64,18 +72,20 @@ def plotter(FND_result):
 def main():
     length = 100
     rad1 = 50
-    rad2 = 23
+    rad2 = 25
     delta = 1
     initial_guess = 30
-    iterations = 200
+    iterations = 300
 
-    circle1 = create_circle_boundary(rad1, length)
+    rect = create_rectangle(length, 50, 5, 20, 2)
+    plotter(rect)
+    """circle1 = create_circle_boundary(rad1, length)
     circle2 = create_circle_boundary(rad2, length)
     boundaries = boundary_comp(circle1, circle2)
     value_grid = create_value_grid(circle1, circle2, length, initial_guess)
 
     FND_result = finite_diff_method(length, delta, boundaries, value_grid, iterations)
-    plotter(FND_result)
+    plotter(FND_result)"""
 
 
 if __name__ == '__main__':
