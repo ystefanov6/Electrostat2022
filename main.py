@@ -8,24 +8,44 @@ from PIL import Image
 
 
 class Rect:
-    def __init__(self, length, x, y, x_off, y_off):
+    def __init__(self, length, x, y, x_off, y_off, radio):
         self.length = length
+        self.radio = radio
         self.x, self.y, x_off, y_off = x, y, x_off, y_off
         grid = np.zeros((self.length, self.length), dtype=bool)
-        grid[y_off:y + y_off, x_off:x + x_off] = True
+
+        if self.radio == 'S':
+            grid[y_off:y + y_off, x_off:x + x_off] = True
+
+        elif self.radio == 'H':
+            grid[y_off:y + y_off, x_off] = True
+            grid[y_off, x_off:x + x_off] = True
+            grid[y_off:y + y_off, x + x_off - 1] = True
+            grid[y + y_off - 1, x_off:x + x_off] = True
 
         self.rect = grid
 
 
 class Circle:
-    def __init__(self, length, rad):
+    def __init__(self, length, rad, radio, xoffset, yoffset):
         self.rad = rad
         self.length = length
+        self.radio = radio
+        self.xoffset = xoffset
+        self.yoffset = yoffset
+        self.adjusted_x_offset = self.xoffset-self.rad
+        self.adusted_y_offset = self.yoffset-self.rad
         x, y = np.mgrid[:self.length, :self.length]
-        circle = (x - self.rad * (self.length / 2 / self.rad)) ** 2 + \
-                 (y - self.rad * (self.length / 2 / self.rad)) ** 2
-        self.donut = (circle < self.rad ** 2 + self.rad + self.length / 4) & \
-                     (circle > self.rad ** 2 - self.rad - self.length / 4)
+        circle = (x - self.rad - self.yoffset) ** 2 + \
+                 (y - self.rad - self.xoffset) ** 2
+
+        if self.radio == 'H':
+            self.donut = (circle < self.rad ** 2 + self.rad + self.length / 4) & \
+                         (circle > self.rad ** 2 - self.rad - self.length / 4)
+
+        elif self.radio == 'S':
+            self.donut = (circle < rad ** 2 + rad + length / 4)
+        # print(len(self.donut))
 
 
 class App:
@@ -74,6 +94,8 @@ class App:
         self.length = None
         self.rads = []
         self.radValEntries = []
+        self.circle_y_offsets = []
+        self.circle_x_offsets = []
         self.iterations = None
         self.circles = []
         self.widths = []
@@ -86,6 +108,9 @@ class App:
         self.valgrid_comp = None
         self.T = None
         self.rectangles = []
+        self.circleradio = None
+        self.rectradio = None
+
 
         self.Label1 = Label(self.parent)
         self.Label1.place(relx=0.017, rely=0.042, height=21, width=104)
@@ -229,7 +254,7 @@ class App:
         else:
             self.delta = 1
 
-        self.length = int(self.entry2.get()) + 1
+        self.length = int(self.entry2.get())
 
         self.iterations = int(self.entry8.get())
 
@@ -246,17 +271,17 @@ class App:
         self.create_circle_boundary()
 
     def create_circle_boundary(self):
-        for rad in self.rads:
-            circle = Circle(self.length, rad).donut
+        for rad, x_off, y_off in zip(self.rads, self.circle_x_offsets, self.circle_y_offsets):
+            circle = Circle(self.length, rad, self.circleradio, x_off, y_off).donut
             self.circles.append(circle)
 
         self.create_rect_boundary()
 
     def create_rect_boundary(self):
         for width, height, x_off, y_off in zip(self.widths, self.heights, self.x_offsets, self.y_offsets):
-            rectangle = Rect(self.length, width, height, x_off, y_off).rect
+            rectangle = Rect(self.length, width, height, x_off, y_off, self.rectradio).rect
             self.rectangles.append(rectangle)
-
+        # print(len(self.rectangles))
         self.create_value_grid()
 
     def create_value_grid(self):
@@ -365,6 +390,46 @@ class App:
         self.valEntry.configure(foreground="#000000")
         self.valEntry.configure(insertbackground="black")
 
+        self.Label12 = Label(top3)
+        self.Label12.pack()
+        self.Label12.configure(anchor='w')
+        self.Label12.configure(background="#fafaff")
+        self.Label12.configure(compound='left')
+        self.Label12.configure(disabledforeground="#a3a3a3")
+        self.Label12.configure(font="-family {Poppins} -size 9")
+        self.Label12.configure(foreground="#000000")
+        self.Label12.configure(text='''Input x-offset (to center: grid size / 2)''')
+
+        self.circle_x_off = Entry(top3)
+        self.circle_x_off.pack()
+        self.circle_x_off.configure(background="white")
+        self.circle_x_off.configure(disabledforeground="#a3a3a3")
+        self.circle_x_off.configure(font="TkFixedFont")
+        self.circle_x_off.configure(foreground="#000000")
+        self.circle_x_off.configure(insertbackground="black")
+
+        self.Label13 = Label(top3)
+        self.Label13.pack()
+        self.Label13.configure(anchor='w')
+        self.Label13.configure(background="#fafaff")
+        self.Label13.configure(compound='left')
+        self.Label13.configure(disabledforeground="#a3a3a3")
+        self.Label13.configure(font="-family {Poppins} -size 9")
+        self.Label13.configure(foreground="#000000")
+        self.Label13.configure(text='''Input y-offset (to center: grid size / 2)''')
+
+        self.circle_y_off = Entry(top3)
+        self.circle_y_off.pack()
+        self.circle_y_off.configure(background="white")
+        self.circle_y_off.configure(disabledforeground="#a3a3a3")
+        self.circle_y_off.configure(font="TkFixedFont")
+        self.circle_y_off.configure(foreground="#000000")
+        self.circle_y_off.configure(insertbackground="black")
+
+        self.circlevar = IntVar()
+        Radiobutton(top3, text="Hollow", variable=self.circlevar, value=1, command=self.circle_radio).pack()
+        Radiobutton(top3, text="Solid", variable=self.circlevar, value=2, command=self.circle_radio).pack()
+
         self.Button11 = Button(top3, command=self.combine_func(self.get_rads, top3.destroy))
         self.Button11.pack(pady=5)
         self.Button11.configure(activebackground="#273469")
@@ -382,7 +447,10 @@ class App:
 
     def get_rads(self):
         self.rads.append(int(self.radEntry.get()))
+        #print(len(self.rads))
         self.radValEntries.append(int(self.valEntry.get()))
+        self.circle_x_offsets.append(int(self.circle_x_off.get()))
+        self.circle_y_offsets.append(int(self.circle_y_off.get()))
 
     def open_popup_2(self):
         top2 = Toplevel(self.parent)
@@ -479,6 +547,10 @@ class App:
         self.rectVals.configure(foreground="#000000")
         self.rectVals.configure(insertbackground="black")
 
+        self.rectvar = IntVar()
+        Radiobutton(top2, text="Hollow", variable=self.rectvar, value=1, command=self.rectangle_radio).pack()
+        Radiobutton(top2, text="Solid", variable=self.rectvar, value=2, command=self.rectangle_radio).pack()
+
         self.Button10 = Button(top2, command=self.combine_func(self.get_rect_data, top2.destroy))
         self.Button10.pack(pady=5)
         self.Button10.configure(activebackground="#273469")
@@ -510,7 +582,7 @@ class App:
 
     def draw_boundaries(self):
 
-        fig = Figure(figsize=(5, 5), dpi=100)
+        fig = Figure(figsize=(4, 5), dpi=100)
 
         fig.add_subplot(111).imshow(self.gg, cmap='Greys',  interpolation='nearest')
 
@@ -530,18 +602,21 @@ class App:
         self.canvas.flush_events()
 
     def temp_bound_comp(self):
-        self.length = int(self.entry2.get()) + 1
-
-        for rad in self.rads:
-            circle = Circle(self.length, rad).donut
+        self.length = int(self.entry2.get())
+        print(self.length)
+        self.circles = []
+        self.rectangles = []
+        for rad, x_off, y_off in zip(self.rads, self.circle_x_offsets, self.circle_y_offsets):
+            circle = Circle(self.length, rad, self.circleradio, x_off, y_off).donut
             self.circles.append(circle)
 
         for width, height, x_off, y_off in zip(self.widths, self.heights, self.x_offsets, self.y_offsets):
-            rectangle = Rect(self.length, width, height, x_off, y_off).rect
+            rectangle = Rect(self.length, width, height, x_off, y_off, self.rectradio).rect
             self.rectangles.append(rectangle)
 
         self.boundary_combo = self.circles + self.rectangles
         self.gg = sum(self.boundary_combo)
+        print(self.gg)
 
     def save_plot(self):
 
@@ -551,6 +626,34 @@ class App:
         dialogue = image.filename = filedialog.asksaveasfilename(initialdir="/", title="Select file", filetypes=(
             ('PNG', '*.png'), ('BMP', ('*.bmp', '*.jdib')), ('GIF', '*.gif')))
         image.save(dialogue)
+
+    def circle_radio(self):
+        choice = self.circlevar.get()
+        if choice == 1:
+            output = "H"
+
+        elif choice == 2:
+            output = "S"
+
+        else:
+            output = "Invalid selection"
+
+        self.circleradio = output
+        print(self.circleradio)
+
+    def rectangle_radio(self):
+        choice = self.rectvar.get()
+        if choice == 1:
+            output = "H"
+
+        elif choice == 2:
+            output = "S"
+
+        else:
+            output = "Invalid selection"
+
+        self.rectradio = output
+        print(self.rectradio)
 
 
 def main():
